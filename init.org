@@ -1,0 +1,330 @@
+#+title: Kerr's Literate Emacs Configuration
+#+author: Kerr Maxwell
+#+date: [2021-07-06 Tue]
+
+* Current Task List
+** TODO Fix fonts
+
+* Startup Performace & Metrics
+#+begin_src emacs-lisp
+  ;; Time Startup Performance AndImprove By Disabling Garage Collectio
+  ;; The default is 800 kilobytes.  Measured in bytes. Reset to default
+  ;; At The End
+  (setq gc-cons-threshold (* 50 1000 1000))
+
+  ;; Profile emacs startup
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (message "*** Emacs loaded in %s with %d garbage collections."
+                       (format "%.2f seconds"
+                               (float-time
+                                (time-subtract after-init-time before-init-time)))
+                       gcs-done)))
+#+end_src
+
+
+* Package Management
+Set up package management with use-package (for official) and quelpa (for personal github)
+
+** Set up use-package
+#+begin_src emacs-lisp
+  (require `package)                     
+  (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                           ("org" . "https://orgmode.org/elpa/")
+                           ("elpa" . "https://elpa.gnu.org/packages/")))
+  (package-initialize)
+
+  (unless package-archive-contents       
+    (package-refresh-contents))         
+
+  (unless (package-installed-p 'use-package)
+    (package-install `use-package))
+  (require 'use-package)
+  (setq use-package-always-ensure t)
+#+end_src
+
+** Set up quelpa
+#+begin_src emacs-lisp
+(use-package quelpa)
+#+end_src
+
+
+* Interface
+Immediately visible user interface configurations
+** Basic User Interface Cleaning  
+The first task is to remove many of the unneeded user-interface elements
+
+*** No startup screen
+#+begin_src emacs-lisp
+  (setq inhibit-startup-message t)
+#+end_src
+
+*** Remove control bars and their tooltips
+#+begin_src emacs-lisp
+  (scroll-bar-mode -1)
+  (tool-bar-mode -1)			
+  (tooltip-mode -1)			
+  (menu-bar-mode -1)
+#+end_src
+
+*** Disable visual bell
+#+begin_src emacs-lisp
+  (setq visible-bell 1)
+#+end_src
+
+** Transparency
+I like my emacs sligtly transparent when using a twm
+#+begin_src emacs-lisp
+  (set-frame-parameter (selected-frame) 'alpha '(92 . 92))
+  (add-to-list 'default-frame-alist '(alpha . (92 . 92)))
+#+end_src
+
+** Maximize by default
+#+begin_src emacs-lisp
+  (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+#+end_src
+
+** Fonts
+Set up fonts. Currently using [[https://github.com/be5invis/Iosevka][Iosevka]].
+Font height set to 130, just a little larger than normal, a noticeable amount less straining on the eyes
+
+set-face-atribute sets the font associated to a particular symbol, like 'default or 'fixed-pitch. Is passes nil so the change applies to all buffers
+#+begin_src emacs-lisp
+  (set-face-attribute 'default nil :font "-UKWN-Iosevka Fixed-normal-normal-normal-*-21-*-*-*-m-0-iso10646-1")
+  (set-face-attribute 'fixed-pitch nil :font "-UKWN-Iosevka Term-normal-normal-normal-*-21-*-*-*-d-0-iso10646-1")
+  (set-face-attribute 'variable-pitch nil :font "-bB  -Fira Sans-light-normal-normal-*-21-*-*-*-*-0-iso10646-1")
+#+end_src
+
+#+RESULTS:
+
+
+
+** Rainbow Brackets
+#+begin_src emacs-lisp
+  (use-package rainbow-delimiters
+    :hook (prog-mode . rainbow-delimiters-mode))
+#+end_src
+
+* Org-Mode
+Set up and configure org-mode and the various sub-packages that depend on it
+** Org Mode basic setup
+
+Usepackage options
+#+begin_src emacs-lisp
+  (use-package org
+    :config
+    (setq org-hide-emphasis-markers t         ;make font markup invisible
+          org-src-fontify-natively t          ;make src block look nice
+          org-fontify-quote-and-verse-blocks t ;make quotes and verse look nice
+          org-src-tab-acts-natively t         ;TAB behaves as in src block mode
+          org-edit-src-content-indentation 2  ;indent code in src by 2 spaces
+          org-hide-block-startup nil          ;don't fold all upon open
+          org-src-preserve-indentation nil    ;cleaner src whitespace on export
+          org-ellipsis " ⤵" 
+          ))
+#+end_src
+
+Set font options for headings
+#+begin_src emacs-lisp
+;;I like Cantarell for headings
+  (set-face-attribute 'org-document-title nil :font "Cantarell" :weight 'bold :height 1.3)
+  ;; Set font sizes for different heading levels
+    (dolist (face '((org-level-1 . 1.4)
+                    (org-level-2 . 1.2)
+                    (org-level-3 . 1.1)
+                    (org-level-4 . 1.0)
+                    (org-level-5 . 1.0)
+                    (org-level-6 . 1.0)
+                    (org-level-7 . 1.0)
+                    (org-level-8 . 1.0)))
+      (set-face-attribute (car face) nil :font "Cantarell" :weight 'medium :height (cdr face)))
+#+end_src
+
+Set font options for italics/bold after forcing variable pitch mode
+#+begin_src emacs-lisp
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1)
+
+  (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-table nil    :inherit 'fixed-pitch)
+  (set-face-attribute 'org-formula nil  :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil     :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil    :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch)
+  (set-face-attribute 'line-number nil :inherit 'fixed-pitch)
+  (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch)
+#+end_src
+
+#+RESULTS:
+** Bullet points
+#+begin_src emacs-lisp
+  (use-package org-bullets
+    :after org
+    :hook (org-mode . org-bullets-mode)
+    :custom
+    (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+#+end_src
+** Centering and borders
+Create a hook that enables margins and columns when entering org-mode
+#+begin_src emacs-lisp
+  (defun org-mode-visual-fill ()
+    (setq visual-fill-column-width 100
+          visual-fill-column-center-text t)
+    (visual-fill-column-mode 1))
+
+  (use-package visual-fill-column
+    :hook (org-mode . org-mode-visual-fill))
+#+end_src
+** Remember when I finish a task
+#+begin_src emacs-lisp
+  (setq org-log-done 'time)
+#+end_src
+
+-----
+** Org Roam Setup
+#+begin_src emacs-lisp
+  (use-package org-roam
+        :ensure t
+        :hook
+        (after-init . org-roam-mode)
+        :custom
+        (org-roam-directory (file-truename "~/notebook/"))
+        :bind (:map org-roam-mode-map
+                (("C-c n l" . org-roam)
+                 ("C-c n f" . org-roam-find-file)
+                 ("C-c n g" . org-roam-graph))
+                :map org-mode-map
+                (("C-c n i" . org-roam-insert))
+                (("C-c n I" . org-roam-insert-immediate))))
+#+end_src
+** Bibtex integration
+
+Interfaces
+#+begin_src emacs-lisp
+  (use-package helm-bibtex)
+  (use-package org-roam-bibtex
+    :after org-roam
+    :hook (org-roam-mode . org-roam-bibtex-mode)
+    :config
+    (require 'org-ref)) ; optional: if Org Ref is not loaded anywhere else, load it here
+#+end_src
+
+Set up directories for the bibleography
+#+begin_src emacs-lisp
+  (setq reftex-default-bibliography '("~/library/bibleography.bib"))
+  ;; see org-ref for use of these variables
+  (setq org-ref-bibliography-notes "~/library/bib-notes.org"
+        org-ref-default-bibliography '("~/library/bibleography.bib")
+        org-ref-pdf-directory "~/library/documents/")
+
+  (setq bibtex-completion-bibliography "~/library/bibleography.bib"
+        bibtex-completion-library-path "~/library/documents"
+        bibtex-completion-notes-path "~/library/bib-notes.org")
+
+  (setq org-ref-notes-directory "~/notebook/")
+  (setq org-ref-notes-function 'orb-edit-notes)
+#+end_src
+
+-----
+** Custom org-pomodoro
+#+begin_src emacs-lisp
+  (quelpa '(org-pomodoro :fetcher github :repo "palkiakerr/org-pomodoro" :files (:defaults "resources")))
+#+end_src
+
+
+
+* Completion frameworks
+** IVY
+#+begin_src emacs-lisp
+  (use-package ivy
+    :diminish
+    :bind (("C-s" . swiper)
+           :map ivy-minibuffer-map
+           ("TAB" . ivy-alt-done)
+           ("C-f" . ivy-alt-done)
+           ("C-l" . ivy-alt-done)
+           ("C-j" . ivy-next-line)
+           ("C-k" . ivy-previous-line)
+           :map ivy-switch-buffer-map
+           ("C-k" . ivy-previous-line)
+           ("C-l" . ivy-done)
+           ("C-d" . ivy-switch-buffer-kill)
+           :map ivy-reverse-i-search-map
+           ("C-k" . ivy-previous-line)
+           ("C-d" . ivy-reverse-i-search-kill))
+    :init
+    (ivy-mode 1))
+  ; and make it more descriptive
+  (use-package ivy-rich
+    :init
+    (ivy-rich-mode 1))
+#+end_src
+
+** Which Key
+#+begin_src emacs-lisp
+  (use-package which-key
+    :init (which-key-mode)
+    :diminish which-key-mode
+    :config
+    (setq which-key-idle-delay 0))
+#+end_src
+** Counsel
+#+begin_src emacs-lisp
+  ;; Counsel alternatives To Common EMACS Commands
+  (use-package counsel
+    :bind (("M-x" . counsel-M-x)
+           ("C-x C-f" . counsel-find-file))
+    :config
+    (setq ivy-initial-inputs-alist nil))
+#+end_src
+
+** Better Help Comands
+#+begin_src emacs-lisp
+  ;; Replace The Help Help Functions With Better Ones
+  (use-package helpful
+    :commands (helpful-callable helpful-variable helpful-command helpful-key)
+    :custom
+    (counsel-describe-function-function #'helpful-callable)
+    (counsel-describe-variable-function #'helpful-variable)
+    :bind
+    ([remap describe-function] . counsel-describe-function)
+    ([remap describe-command] . helpful-command)
+    ([remap describe-variable] . counsel-describe-variable)
+    ([remap describe-key] . helpful-key))
+#+end_src
+
+
+* Theming
+** Doom Modeline
+#+begin_src emacs-lisp
+  (use-package doom-modeline
+    :ensure t
+    :init (doom-modeline-mode 1)) 
+#+end_src
+
+** Doom Theme
+#+begin_src emacs-lisp
+  ;; Set Up DOOM-vibrant Theme
+  (use-package doom-themes
+    :ensure t
+    :config
+    ;; Global settings (defaults)
+    (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+          doom-themes-enable-italic t) ; if nil, italics is universally disabled
+    (load-theme 'doom-vibrant t)
+
+    ;; Enable flashing mode-line on errors
+    (doom-themes-visual-bell-config)
+    ;; Enable custom neotree theme (all-the-icons must be installed!)
+    (doom-themes-neotree-config)
+    ;; or for treemacs users
+    (setq doom-themes-treemacs-theme "doom-atom") ; use "doom-colors" for less minimal icon theme
+    (doom-themes-treemacs-config)
+    ;; Corrects (and improves) org-mode's native fontification.
+    (doom-themes-org-config))
+#+end_src

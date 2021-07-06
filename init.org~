@@ -1,0 +1,102 @@
+#+title: Kerr's Literate Emacs Configuration
+#+author: Kerr Maxwell
+#+date: [2021-07-06 Tue]
+
+* Current Task List
+** TODO Fix fonts
+
+
+
+* Package Management
+Set up package management with use-package (for official) and quelpa (for personal github)
+
+** Set up use-package
+#+begin_src emacs-lisp
+  (require `package)                     
+  (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                           ("org" . "https://orgmode.org/elpa/")
+                           ("elpa" . "https://elpa.gnu.org/packages/")))
+  (package-initialize)
+
+  (unless package-archive-contents       
+    (package-refresh-contents))         
+
+  (unless (package-installed-p 'use-package)
+    (package-install `use-package))
+  (require 'use-package)
+  (setq use-package-always-ensure t)
+#+end_src
+
+** Set up quelpa
+#+begin_src emacs-lisp
+(use-package quelpa)
+#+end_src
+
+
+* Interface
+Immediately visible user interface configurations
+** Basic User Interface Cleaning  
+The first task is to remove many of the unneeded user-interface elements
+
+*** No startup screen
+#+begin_src emacs-lisp
+  (setq inhibit-startup-message t)
+#+end_src
+
+*** Remove control bars and their tooltips
+#+begin_src emacs-lisp
+  (scroll-bar-mode -1)
+  (tool-bar-mode -1)			
+  (tooltip-mode -1)			
+  (menu-bar-mode -1)
+#+end_src
+
+*** Disable visual bell
+#+begin_src emacs-lisp
+  (setq visible-bell 1)
+#+end_src
+
+** Transparency
+I like my emacs sligtly transparent when using a twm
+#+begin_src emacs-lisp
+  (set-frame-parameter (selected-frame) 'alpha '(92 . 92))
+  (add-to-list 'default-frame-alist '(alpha . (92 . 92)))
+#+end_src
+
+** Maximize by default
+#+begin_src emacs-lisp
+  (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+#+end_src
+
+** Fonts
+Set up fonts. Currently using [[https://github.com/be5invis/Iosevka][Iosevka]].
+Font height set to 130, just a little larger than normal, a noticeable amount less straining on the eyes
+
+set-face-atribute sets the font associated to a particular symbol, like 'default or 'fixed-pitch. Is passes nil so the change applies to all buffers
+#+begin_src emacs-lisp
+  (set-face-attribute 'default nil :font "-UKWN-Iosevka Fixed-normal-normal-normal-*-21-*-*-*-m-0-iso10646-1")
+  (set-face-attribute 'fixed-pitch nil :font "-UKWN-Iosevka Term-normal-normal-normal-*-21-*-*-*-d-0-iso10646-1")
+(set-face-attribute 'variable-pitch nil :font "
+#+end_src
+
+
+
+
+* Org-Mode
+Set up and configure org-mode and the various sub-packages that depend on it
+** org-mode
+#+begin_src emacs-lisp
+  (use-package org
+    :config
+    (setq org-hide-emphasis-markers t         ;make font markup invisible
+          org-src-fontify-natively t          ;make src block look nice
+          org-fontify-quote-and-verse-blocks t ;make quotes and verse look nice
+          org-src-tab-acts-natively t         ;TAB behaves as in src block mode
+          org-edit-src-content-indentation 2  ;indent code in src by 2 spaces
+          org-hide-block-startup nil          ;don't fold all upon open
+          org-src-preserve-indentation nil    ;cleaner src whitespace on export
+          org-ellipsis " ⤵" 
+          ))
+#+end_src
+
